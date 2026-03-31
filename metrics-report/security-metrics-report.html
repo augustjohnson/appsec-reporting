@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Metrics Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #f4f5f7;
+    --panel-bg: #ffffff;
+    --border: #d1d5db;
+    --text: #1a1a2e;
+    --text-muted: #6b7280;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --red-border: #fca5a5;
+    --yellow: #d97706;
+    --yellow-bg: #fffbeb;
+    --yellow-border: #fcd34d;
+    --green: #16a34a;
+    --green-bg: #f0fdf4;
+    --green-border: #86efac;
+    --na-bg: #f3f4f6;
+    --na-text: #9ca3af;
+    --danger: #ef4444;
+    --danger-hover: #dc2626;
+    --font-body: 'Source Sans 3', -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    font-size: 15px;
+  }
+
+  /* Layout */
+  .app {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .config-panel {
+    width: 480px;
+    min-width: 480px;
+    background: var(--panel-bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .config-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .config-header h2 {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .config-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+  }
+
+  .preview-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 40px;
+    background: var(--bg);
+  }
+
+  /* JSON Section */
+  .json-section {
+    margin-bottom: 20px;
+  }
+
+  .json-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 6px 0;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+  }
+
+  .json-toggle:hover { color: var(--text); }
+
+  .json-toggle .arrow {
+    transition: transform 0.2s;
+    font-size: 10px;
+  }
+
+  .json-toggle .arrow.open { transform: rotate(90deg); }
+
+  .json-body {
+    display: none;
+    margin-top: 8px;
+  }
+
+  .json-body.open { display: block; }
+
+  .json-body textarea {
+    width: 100%;
+    height: 120px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    resize: vertical;
+    line-height: 1.5;
+    background: #fafafa;
+  }
+
+  .json-body textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  }
+
+  .json-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  /* Report Title Config */
+  .report-title-config {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .report-title-config label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .report-title-config input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: var(--font-body);
+  }
+
+  .report-title-config input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  }
+
+  .report-date-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .report-date-row > div { flex: 1; }
+
+  /* Buttons */
+  .btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    color: var(--text);
+    transition: all 0.15s;
+  }
+
+  .btn:hover { background: #f3f4f6; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .btn-primary:hover { background: var(--accent-hover); }
+
+  .btn-danger {
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+
+  .btn-danger:hover {
+    background: #fef2f2;
+  }
+
+  .btn-sm {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  /* Config Section Cards */
+  .config-section-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    background: white;
+    margin-bottom: 14px;
+  }
+
+  .config-section-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+
+  .config-section-name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    background: transparent;
+    padding: 2px 0;
+    font-family: var(--font-body);
+    color: var(--text);
+  }
+
+  .config-section-name:focus {
+    outline: none;
+    border-bottom: 2px solid var(--accent);
+  }
+
+  .config-section-commentary {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: var(--font-body);
+    resize: vertical;
+    min-height: 64px;
+    margin-bottom: 12px;
+    line-height: 1.5;
+    color: var(--text);
+    background: #fafafa;
+  }
+
+  .config-section-commentary:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+    background: white;
+  }
+
+  .section-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* Metric Card */
+  .metric-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    background: #fafafa;
+    transition: border-color 0.15s;
+  }
+
+  .metric-card:hover { border-color: #b0b8c4; }
+
+  .metric-card.hidden-metric {
+    opacity: 0.5;
+    background: #f9fafb;
+  }
+
+  .metric-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .metric-card-header input[type="text"] {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+    padding: 2px 0;
+    font-family: var(--font-body);
+  }
+
+  .metric-card-header input[type="text"]:focus {
+    outline: none;
+    border-bottom: 2px solid var(--accent);
+  }
+
+  .metric-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .metric-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: end;
+  }
+
+  .metric-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .metric-field label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .metric-field input, .metric-field select {
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-size: 13px;
+    font-family: var(--font-body);
+    background: white;
+  }
+
+  .metric-field input:focus, .metric-field select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+  }
+
+  .metric-field.value-field { flex: 1; }
+  .metric-field.type-field { width: 110px; }
+  .metric-field.direction-field { width: 130px; }
+  .metric-field.threshold-field { width: 70px; }
+
+  .threshold-row {
+    display: flex;
+    gap: 8px;
+    align-items: end;
+  }
+
+  .threshold-row .swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    margin-bottom: 8px;
+  }
+
+  .threshold-row .swatch.red { background: var(--red); }
+  .threshold-row .swatch.yellow { background: var(--yellow); }
+
+  .threshold-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    white-space: nowrap;
+  }
+
+  /* Toggle switch */
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .toggle-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+
+  .toggle {
+    position: relative;
+    width: 34px;
+    height: 20px;
+    cursor: pointer;
+  }
+
+  .toggle input { display: none; }
+
+  .toggle .slider {
+    position: absolute;
+    inset: 0;
+    background: #d1d5db;
+    border-radius: 10px;
+    transition: background 0.2s;
+  }
+
+  .toggle .slider::before {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 2px;
+    bottom: 2px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+
+  .toggle input:checked + .slider { background: var(--accent); }
+  .toggle input:checked + .slider::before { transform: translateX(14px); }
+
+  .na-toggle { margin-top: 2px; }
+
+  .remove-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    font-size: 16px;
+    line-height: 1;
+    border-radius: 4px;
+  }
+
+  .remove-btn:hover { color: var(--danger); background: #fef2f2; }
+
+  .add-metric-btn {
+    width: 100%;
+    padding: 8px;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: all 0.15s;
+    margin-top: 10px;
+  }
+
+  .add-metric-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(37, 99, 235, 0.04);
+  }
+
+  .add-section-btn {
+    width: 100%;
+    padding: 10px;
+    border: 2px dashed #93c5fd;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: all 0.15s;
+    margin-top: 4px;
+  }
+
+  .add-section-btn:hover {
+    border-color: var(--accent);
+    background: rgba(37, 99, 235, 0.04);
+  }
+
+  /* Preview / Report */
+  .report {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 14px rgba(0,0,0,0.04);
+    overflow: hidden;
+  }
+
+  .report-header {
+    padding: 32px 40px 24px;
+    border-bottom: 3px solid var(--text);
+  }
+
+  .report-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+
+  .report-meta {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .report-body {
+    padding: 28px 40px 40px;
+  }
+
+  /* Report Sections */
+  .report-section {
+    margin-bottom: 36px;
+  }
+
+  .report-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .report-section-title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .report-section-commentary {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    line-height: 1.65;
+  }
+
+  .report-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .report-metric {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    border-left: 4px solid var(--green);
+    transition: all 0.2s;
+  }
+
+  .report-metric.status-red {
+    border-left-color: var(--red);
+    background: var(--red-bg);
+  }
+
+  .report-metric.status-yellow {
+    border-left-color: var(--yellow);
+    background: var(--yellow-bg);
+  }
+
+  .report-metric.status-green {
+    border-left-color: var(--green);
+    background: var(--green-bg);
+  }
+
+  .report-metric.status-na {
+    border-left-color: var(--na-text);
+    background: var(--na-bg);
+  }
+
+  .report-metric-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+
+  .report-metric-value {
+    font-size: 28px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    letter-spacing: -0.02em;
+  }
+
+  .report-metric.status-red .report-metric-value { color: var(--red); }
+  .report-metric.status-yellow .report-metric-value { color: var(--yellow); }
+  .report-metric.status-green .report-metric-value { color: var(--green); }
+  .report-metric.status-na .report-metric-value { color: var(--na-text); font-size: 18px; }
+
+  .report-metric.text-type .report-metric-value {
+    font-size: 15px;
+    font-family: var(--font-body);
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  .report-metric.text-type {
+    grid-column: 1 / -1;
+    border-left-color: var(--border);
+    background: white;
+  }
+
+  .print-btn-wrap {
+    text-align: right;
+    margin-bottom: 16px;
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; }
+
+    .config-panel, .print-btn-wrap { display: none !important; }
+
+    .app { display: block; height: auto; }
+
+    .preview-panel {
+      padding: 0;
+      overflow: visible;
+    }
+
+    .report {
+      box-shadow: none;
+      border-radius: 0;
+      max-width: 100%;
+    }
+
+    .report-header { padding: 20px 30px 16px; }
+    .report-body { padding: 20px 30px 30px; }
+
+    .report-metric { break-inside: avoid; }
+    .report-section { break-inside: avoid; }
+  }
+
+  /* Scrollbar */
+  .config-body::-webkit-scrollbar,
+  .preview-panel::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .config-body::-webkit-scrollbar-thumb,
+  .preview-panel::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Config Panel -->
+  <div class="config-panel">
+    <div class="config-header">
+      <h2>Metrics Config</h2>
+      <button class="btn btn-sm btn-primary" onclick="printReport()">Print / PDF</button>
+    </div>
+    <div class="config-body">
+      <!-- JSON Import/Export -->
+      <div class="json-section">
+        <button class="json-toggle" onclick="toggleJson()">
+          <span class="arrow" id="jsonArrow">&#9654;</span>
+          JSON Import / Export
+        </button>
+        <div class="json-body" id="jsonBody">
+          <textarea id="jsonArea" placeholder='Paste JSON config here to load, or click "Export" to generate...'></textarea>
+          <div class="json-actions">
+            <button class="btn btn-sm btn-primary" onclick="importJson()">Import</button>
+            <button class="btn btn-sm" onclick="exportJson()">Export</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report Title -->
+      <div class="report-title-config">
+        <label>Report Title</label>
+        <input type="text" id="reportTitle" value="Product Security Metrics Report" oninput="render()">
+        <div class="report-date-row">
+          <div>
+            <label>Reporting Period</label>
+            <input type="text" id="reportPeriod" placeholder="e.g. Q1 2026" oninput="render()">
+          </div>
+          <div>
+            <label>Date</label>
+            <input type="date" id="reportDate" oninput="render()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Sections -->
+      <div id="metricsList"></div>
+      <button class="add-section-btn" onclick="addSection()">+ Add Section</button>
+    </div>
+  </div>
+
+  <!-- Preview Panel -->
+  <div class="preview-panel">
+    <div class="print-btn-wrap">
+      <button class="btn btn-sm" onclick="printReport()">&#9113; Print / Save as PDF</button>
+    </div>
+    <div class="report" id="reportPreview"></div>
+  </div>
+</div>
+
+<script>
+  let sections = [];
+  let metrics = [];
+  let idCounter = 0;
+  let sectionCounter = 0;
+
+  function newSection(overrides = {}) {
+    return {
+      id: sectionCounter++,
+      name: overrides.name || 'New Section',
+      commentary: overrides.commentary || ''
+    };
+  }
+
+  function newMetric(overrides = {}) {
+    return {
+      id: idCounter++,
+      sectionId: overrides.sectionId ?? (sections.length > 0 ? sections[sections.length - 1].id : 0),
+      label: overrides.label || 'New Metric',
+      value: overrides.value ?? '',
+      type: overrides.type || 'number',
+      direction: overrides.direction || 'higher-is-worse',
+      redThreshold: overrides.redThreshold ?? '',
+      yellowThreshold: overrides.yellowThreshold ?? '',
+      hidden: overrides.hidden || false,
+      na: overrides.na || false
+    };
+  }
+
+  function addSection(overrides = {}) {
+    const s = newSection(overrides);
+    sections.push(s);
+    renderConfig();
+    render();
+    return s;
+  }
+
+  function updateSection(id, field, value) {
+    const s = sections.find(s => s.id === id);
+    if (s) {
+      s[field] = value;
+      render();
+    }
+  }
+
+  function removeSection(id) {
+    sections = sections.filter(s => s.id !== id);
+    metrics = metrics.filter(m => m.sectionId !== id);
+    renderConfig();
+    render();
+  }
+
+  function addMetric(overrides = {}) {
+    metrics.push(newMetric(overrides));
+    renderConfig();
+    render();
+  }
+
+  function removeMetric(id) {
+    metrics = metrics.filter(m => m.id !== id);
+    renderConfig();
+    render();
+  }
+
+  function updateMetric(id, field, value) {
+    const m = metrics.find(m => m.id === id);
+    if (m) {
+      m[field] = value;
+      if (field === 'type' && value === 'text') {
+        m.redThreshold = '';
+        m.yellowThreshold = '';
+        renderConfig();
+      }
+      render();
+    }
+  }
+
+  function getStatus(metric) {
+    if (metric.na) return 'na';
+    if (metric.type === 'text') return 'neutral';
+
+    const val = parseFloat(metric.value);
+    const red = parseFloat(metric.redThreshold);
+    const yellow = parseFloat(metric.yellowThreshold);
+
+    if (isNaN(val)) return 'green';
+
+    if (metric.direction === 'higher-is-worse') {
+      if (!isNaN(red) && val >= red) return 'red';
+      if (!isNaN(yellow) && val >= yellow) return 'yellow';
+      return 'green';
+    } else {
+      if (!isNaN(red) && val <= red) return 'red';
+      if (!isNaN(yellow) && val <= yellow) return 'yellow';
+      return 'green';
+    }
+  }
+
+  function formatValue(metric) {
+    if (metric.na) return 'N/A';
+    if (metric.type === 'text') return metric.value || '—';
+    if (metric.value === '' || metric.value === undefined) return '—';
+    return metric.type === 'percentage' ? metric.value + '%' : metric.value;
+  }
+
+  function thresholdHint(metric) {
+    if (metric.direction === 'higher-is-worse') {
+      return { redLabel: '≥ Red', yellowLabel: '≥ Yellow' };
+    } else {
+      return { redLabel: '≤ Red', yellowLabel: '≤ Yellow' };
+    }
+  }
+
+  function renderMetricCard(m) {
+    const hints = thresholdHint(m);
+    const isText = m.type === 'text';
+    return `
+      <div class="metric-card ${m.hidden ? 'hidden-metric' : ''}">
+        <div class="metric-card-header">
+          <input type="text" value="${escHtml(m.label)}"
+            onchange="updateMetric(${m.id}, 'label', this.value)"
+            placeholder="Metric name">
+          <div class="metric-card-actions">
+            <div class="toggle-wrap na-toggle">
+              <label class="toggle">
+                <input type="checkbox" ${m.na ? 'checked' : ''}
+                  onchange="updateMetric(${m.id}, 'na', this.checked)">
+                <span class="slider"></span>
+              </label>
+              <span class="toggle-label">N/A</span>
+            </div>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" ${m.hidden ? 'checked' : ''}
+                  onchange="updateMetric(${m.id}, 'hidden', this.checked)">
+                <span class="slider"></span>
+              </label>
+              <span class="toggle-label">Hide</span>
+            </div>
+            <button class="remove-btn" onclick="removeMetric(${m.id})" title="Remove">&#10005;</button>
+          </div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-field value-field">
+            <label>Value</label>
+            <input type="${isText ? 'text' : 'number'}"
+              value="${escHtml(String(m.value))}"
+              oninput="updateMetric(${m.id}, 'value', this.value)"
+              placeholder="${isText ? 'Enter text...' : '0'}"
+              ${m.na ? 'disabled' : ''}>
+          </div>
+          <div class="metric-field type-field">
+            <label>Type</label>
+            <select onchange="updateMetric(${m.id}, 'type', this.value)">
+              <option value="number" ${m.type === 'number' ? 'selected' : ''}>Number</option>
+              <option value="percentage" ${m.type === 'percentage' ? 'selected' : ''}>Percentage</option>
+              <option value="text" ${m.type === 'text' ? 'selected' : ''}>Text</option>
+            </select>
+          </div>
+          ${!isText ? `
+          <div class="metric-field direction-field">
+            <label>Direction</label>
+            <select onchange="updateMetric(${m.id}, 'direction', this.value)">
+              <option value="higher-is-worse" ${m.direction === 'higher-is-worse' ? 'selected' : ''}>Higher = Worse</option>
+              <option value="higher-is-better" ${m.direction === 'higher-is-better' ? 'selected' : ''}>Higher = Better</option>
+            </select>
+          </div>
+          ` : ''}
+        </div>
+        ${!isText ? `
+        <div class="threshold-row">
+          <span class="swatch red"></span>
+          <div class="metric-field threshold-field">
+            <label>${hints.redLabel}</label>
+            <input type="number" value="${m.redThreshold}"
+              oninput="updateMetric(${m.id}, 'redThreshold', this.value)"
+              placeholder="—" ${m.na ? 'disabled' : ''}>
+          </div>
+          <span class="swatch yellow"></span>
+          <div class="metric-field threshold-field">
+            <label>${hints.yellowLabel}</label>
+            <input type="number" value="${m.yellowThreshold}"
+              oninput="updateMetric(${m.id}, 'yellowThreshold', this.value)"
+              placeholder="—" ${m.na ? 'disabled' : ''}>
+          </div>
+          <span class="threshold-label">else Green</span>
+        </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  function renderConfig() {
+    const container = document.getElementById('metricsList');
+    container.innerHTML = sections.map(section => {
+      const sectionMetrics = metrics.filter(m => m.sectionId === section.id);
+      return `
+        <div class="config-section-card">
+          <div class="config-section-card-header">
+            <input type="text" class="config-section-name"
+              value="${escHtml(section.name)}"
+              onchange="updateSection(${section.id}, 'name', this.value)"
+              placeholder="Section name">
+            <button class="remove-btn" onclick="removeSection(${section.id})" title="Remove section">&#10005;</button>
+          </div>
+          <textarea class="config-section-commentary"
+            oninput="updateSection(${section.id}, 'commentary', this.value)"
+            placeholder="Add commentary for this section...">${escHtml(section.commentary)}</textarea>
+          <div class="section-metrics">
+            ${sectionMetrics.map(m => renderMetricCard(m)).join('')}
+          </div>
+          <button class="add-metric-btn" onclick="addMetric({sectionId: ${section.id}})">+ Add Metric</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function render() {
+    const title = document.getElementById('reportTitle').value || 'Security Metrics Report';
+    const period = document.getElementById('reportPeriod').value;
+    const dateVal = document.getElementById('reportDate').value;
+    const dateStr = dateVal ? new Date(dateVal + 'T12:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+    const metaLine = [period, dateStr].filter(Boolean).join(' · ');
+
+    const hasContent = sections.some(s => {
+      return s.commentary || metrics.some(m => m.sectionId === s.id && !m.hidden);
+    });
+
+    const sectionsHtml = sections.map(section => {
+      const sectionMetrics = metrics.filter(m => m.sectionId === section.id && !m.hidden);
+
+      const metricsHtml = sectionMetrics.map(m => {
+        const status = getStatus(m);
+        const isText = m.type === 'text';
+        return `
+          <div class="report-metric status-${status} ${isText ? 'text-type' : ''}">
+            <div class="report-metric-label">${escHtml(m.label)}</div>
+            <div class="report-metric-value">${escHtml(formatValue(m))}</div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="report-section">
+          <h2 class="report-section-title">${escHtml(section.name)}</h2>
+          ${section.commentary ? `<p class="report-section-commentary">${escHtml(section.commentary)}</p>` : ''}
+          ${sectionMetrics.length > 0 ? `<div class="report-metrics-grid">${metricsHtml}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('reportPreview').innerHTML = `
+      <div class="report-header">
+        <h1>${escHtml(title)}</h1>
+        ${metaLine ? `<div class="report-meta">${escHtml(metaLine)}</div>` : ''}
+      </div>
+      <div class="report-body">
+        ${hasContent
+          ? sectionsHtml
+          : `<p style="color: var(--text-muted); text-align: center; padding: 40px 0;">Add sections and metrics in the config panel to get started.</p>`
+        }
+      </div>
+    `;
+  }
+
+  function escHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // JSON import/export
+  function toggleJson() {
+    const body = document.getElementById('jsonBody');
+    const arrow = document.getElementById('jsonArrow');
+    body.classList.toggle('open');
+    arrow.classList.toggle('open');
+  }
+
+  function exportJson() {
+    const config = {
+      title: document.getElementById('reportTitle').value,
+      period: document.getElementById('reportPeriod').value,
+      date: document.getElementById('reportDate').value,
+      sections: sections.map(s => ({
+        id: s.id,
+        name: s.name,
+        commentary: s.commentary
+      })),
+      metrics: metrics.map(m => ({
+        sectionId: m.sectionId,
+        label: m.label,
+        value: m.value,
+        type: m.type,
+        direction: m.direction,
+        redThreshold: m.redThreshold,
+        yellowThreshold: m.yellowThreshold,
+        hidden: m.hidden,
+        na: m.na
+      }))
+    };
+    document.getElementById('jsonArea').value = JSON.stringify(config, null, 2);
+    const body = document.getElementById('jsonBody');
+    if (!body.classList.contains('open')) toggleJson();
+  }
+
+  function importJson() {
+    const raw = document.getElementById('jsonArea').value.trim();
+    if (!raw) return;
+    try {
+      const config = JSON.parse(raw);
+      if (config.title) document.getElementById('reportTitle').value = config.title;
+      if (config.period) document.getElementById('reportPeriod').value = config.period;
+      if (config.date) document.getElementById('reportDate').value = config.date;
+
+      sections = [];
+      sectionCounter = 0;
+      metrics = [];
+      idCounter = 0;
+
+      if (Array.isArray(config.sections)) {
+        sections = config.sections.map(s => ({
+          id: s.id !== undefined ? s.id : sectionCounter++,
+          name: s.name || 'Section',
+          commentary: s.commentary || ''
+        }));
+        sectionCounter = Math.max(sectionCounter, ...sections.map(s => s.id + 1));
+      }
+
+      if (Array.isArray(config.metrics)) {
+        config.metrics.forEach(m => metrics.push(newMetric(m)));
+      }
+
+      renderConfig();
+      render();
+    } catch (e) {
+      alert('Invalid JSON: ' + e.message);
+    }
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  // Init with example sections and metrics
+  function init() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('reportDate').value = today;
+
+    const s1 = addSection({
+      name: 'Vulnerability Management',
+      commentary: 'Tracks open findings by severity and remediation performance against defined SLAs. Critical and High findings are actively triaged; MTTR and SLA compliance reflect the team\'s ability to close issues within committed timelines.'
+    });
+    addMetric({ sectionId: s1.id, label: 'Open Critical Findings', value: 3, type: 'number', direction: 'higher-is-worse', redThreshold: 1, yellowThreshold: 1 });
+    addMetric({ sectionId: s1.id, label: 'Open High Findings', value: 12, type: 'number', direction: 'higher-is-worse', redThreshold: 20, yellowThreshold: 10 });
+    addMetric({ sectionId: s1.id, label: 'MTTR (days)', value: 18, type: 'number', direction: 'higher-is-worse', redThreshold: 30, yellowThreshold: 14 });
+    addMetric({ sectionId: s1.id, label: 'SLA Compliance', value: 87, type: 'percentage', direction: 'higher-is-better', redThreshold: 70, yellowThreshold: 85 });
+
+    const s2 = addSection({
+      name: 'Program Health',
+      commentary: 'Measures the breadth and maturity of the security program, including tooling coverage and ongoing initiatives. Scanner coverage reflects the percentage of in-scope repositories with active security scanning enabled.'
+    });
+    addMetric({ sectionId: s2.id, label: 'Scanner Coverage', value: 94, type: 'percentage', direction: 'higher-is-better', redThreshold: 75, yellowThreshold: 90 });
+    addMetric({ sectionId: s2.id, label: 'Notes', value: 'Champion training scheduled for April. New SAST tool onboarding in progress.', type: 'text' });
+  }
+
+  init();
+</script>
+
+</body>
+</html>
