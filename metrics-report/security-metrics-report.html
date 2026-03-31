@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Security Metrics Report</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
   :root {
     --bg: #f4f5f7;
     --panel-bg: #ffffff;
@@ -17,19 +15,13 @@
     --accent-hover: #1d4ed8;
     --red: #dc2626;
     --red-bg: #fef2f2;
-    --red-border: #fca5a5;
-    --yellow: #d97706;
-    --yellow-bg: #fffbeb;
-    --yellow-border: #fcd34d;
     --green: #16a34a;
     --green-bg: #f0fdf4;
-    --green-border: #86efac;
     --na-bg: #f3f4f6;
     --na-text: #9ca3af;
     --danger: #ef4444;
-    --danger-hover: #dc2626;
-    --font-body: 'Source Sans 3', -apple-system, sans-serif;
-    --font-mono: 'IBM Plex Mono', monospace;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --font-mono: ui-monospace, 'Cascadia Code', 'Menlo', 'Consolas', monospace;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -214,15 +206,6 @@
 
   .btn-primary:hover { background: var(--accent-hover); }
 
-  .btn-danger {
-    color: var(--danger);
-    border-color: var(--danger);
-  }
-
-  .btn-danger:hover {
-    background: #fef2f2;
-  }
-
   .btn-sm {
     padding: 4px 10px;
     font-size: 12px;
@@ -372,7 +355,6 @@
 
   .metric-field.value-field { flex: 1; }
   .metric-field.type-field { width: 110px; }
-  .metric-field.direction-field { width: 130px; }
   .metric-field.threshold-field { width: 70px; }
 
   .threshold-row {
@@ -387,16 +369,26 @@
     border-radius: 3px;
     flex-shrink: 0;
     margin-bottom: 8px;
+    background: var(--red);
   }
 
-  .threshold-row .swatch.red { background: var(--red); }
-  .threshold-row .swatch.yellow { background: var(--yellow); }
+  /* Direction checkbox */
+  .check-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text);
+    padding: 6px 0;
+  }
 
-  .threshold-label {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-    white-space: nowrap;
+  .check-label input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
   }
 
   /* Toggle switch */
@@ -503,6 +495,26 @@
     background: rgba(37, 99, 235, 0.04);
   }
 
+  /* Table data textarea */
+  .table-data-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    resize: vertical;
+    min-height: 90px;
+    line-height: 1.6;
+    background: white;
+  }
+
+  .table-data-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+  }
+
   /* Preview / Report */
   .report {
     max-width: 800px;
@@ -571,16 +583,13 @@
     padding: 16px 20px;
     border-left: 4px solid var(--green);
     transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
   }
 
   .report-metric.status-red {
     border-left-color: var(--red);
     background: var(--red-bg);
-  }
-
-  .report-metric.status-yellow {
-    border-left-color: var(--yellow);
-    background: var(--yellow-bg);
   }
 
   .report-metric.status-green {
@@ -599,7 +608,7 @@
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    margin-bottom: 4px;
+    flex: 1;
   }
 
   .report-metric-value {
@@ -607,20 +616,13 @@
     font-weight: 700;
     font-family: var(--font-mono);
     letter-spacing: -0.02em;
+    text-align: center;
+    padding-top: 10px;
   }
 
   .report-metric.status-red .report-metric-value { color: var(--red); }
-  .report-metric.status-yellow .report-metric-value { color: var(--yellow); }
   .report-metric.status-green .report-metric-value { color: var(--green); }
   .report-metric.status-na .report-metric-value { color: var(--na-text); font-size: 18px; }
-
-  .report-metric.text-type .report-metric-value {
-    font-size: 15px;
-    font-family: var(--font-body);
-    font-weight: 400;
-    line-height: 1.5;
-    color: var(--text);
-  }
 
   .report-metric.text-type {
     grid-column: 1 / -1;
@@ -628,16 +630,56 @@
     background: white;
   }
 
-  .print-btn-wrap {
-    text-align: right;
-    margin-bottom: 16px;
+  .report-metric.text-type .report-metric-value {
+    font-size: 15px;
+    font-family: var(--font-body);
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--text);
+    text-align: left;
+    padding-top: 4px;
+  }
+
+  .report-metric.table-type {
+    grid-column: 1 / -1;
+    border-left-color: var(--border);
+    background: white;
+    display: block;
+  }
+
+  .report-metric-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+
+  .report-metric-table th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    padding: 6px 20px 6px 0;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .report-metric-table td {
+    padding: 8px 20px 8px 0;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .report-metric-table tbody tr:last-child td {
+    border-bottom: none;
   }
 
   /* Print */
   @media print {
     body { background: white; }
 
-    .config-panel, .print-btn-wrap { display: none !important; }
+    .config-panel { display: none !important; }
 
     .app { display: block; height: auto; }
 
@@ -679,6 +721,7 @@
   <div class="config-panel">
     <div class="config-header">
       <h2>Metrics Config</h2>
+      <span id="versionBadge" style="font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:0.03em;"></span>
       <button class="btn btn-sm btn-primary" onclick="printReport()">Print / PDF</button>
     </div>
     <div class="config-body">
@@ -721,18 +764,23 @@
 
   <!-- Preview Panel -->
   <div class="preview-panel">
-    <div class="print-btn-wrap">
-      <button class="btn btn-sm" onclick="printReport()">&#9113; Print / Save as PDF</button>
-    </div>
     <div class="report" id="reportPreview"></div>
   </div>
 </div>
 
 <script>
+  const VERSION = '0.2.0';
+
   let sections = [];
   let metrics = [];
   let idCounter = 0;
   let sectionCounter = 0;
+
+  const _escDiv = document.createElement('div');
+  function escHtml(str) {
+    _escDiv.textContent = str;
+    return _escDiv.innerHTML;
+  }
 
   function newSection(overrides = {}) {
     return {
@@ -749,80 +797,71 @@
       label: overrides.label || 'New Metric',
       value: overrides.value ?? '',
       type: overrides.type || 'number',
-      direction: overrides.direction || 'higher-is-worse',
+      higherIsBetter: overrides.higherIsBetter ?? false,
       redThreshold: overrides.redThreshold ?? '',
-      yellowThreshold: overrides.yellowThreshold ?? '',
       hidden: overrides.hidden || false,
       na: overrides.na || false
     };
   }
 
+  function refresh() {
+    renderConfig();
+    render();
+  }
+
   function addSection(overrides = {}) {
     const s = newSection(overrides);
     sections.push(s);
-    renderConfig();
-    render();
+    refresh();
     return s;
   }
 
   function updateSection(id, field, value) {
     const s = sections.find(s => s.id === id);
-    if (s) {
-      s[field] = value;
-      render();
-    }
+    if (s) { s[field] = value; render(); }
   }
 
   function removeSection(id) {
     sections = sections.filter(s => s.id !== id);
     metrics = metrics.filter(m => m.sectionId !== id);
-    renderConfig();
-    render();
+    refresh();
   }
 
   function addMetric(overrides = {}) {
     metrics.push(newMetric(overrides));
-    renderConfig();
-    render();
+    refresh();
   }
 
   function removeMetric(id) {
     metrics = metrics.filter(m => m.id !== id);
-    renderConfig();
-    render();
+    refresh();
   }
 
   function updateMetric(id, field, value) {
     const m = metrics.find(m => m.id === id);
-    if (m) {
-      m[field] = value;
-      if (field === 'type' && value === 'text') {
-        m.redThreshold = '';
-        m.yellowThreshold = '';
-        renderConfig();
-      }
+    if (!m) return;
+    m[field] = value;
+    if (field === 'type' && (value === 'text' || value === 'table')) {
+      m.redThreshold = '';
+      refresh();
+    } else {
       render();
     }
   }
 
   function getStatus(metric) {
     if (metric.na) return 'na';
-    if (metric.type === 'text') return 'neutral';
+    if (metric.type === 'text' || metric.type === 'table') return 'neutral';
 
     const val = parseFloat(metric.value);
     const red = parseFloat(metric.redThreshold);
-    const yellow = parseFloat(metric.yellowThreshold);
 
-    if (isNaN(val)) return 'green';
+    if (isNaN(val) || isNaN(red)) return 'green';
 
-    if (metric.direction === 'higher-is-worse') {
-      if (!isNaN(red) && val >= red) return 'red';
-      if (!isNaN(yellow) && val >= yellow) return 'yellow';
-      return 'green';
+    if (metric.higherIsBetter) {
+      return val <= red ? 'red' : 'green';
     } else {
-      if (!isNaN(red) && val <= red) return 'red';
-      if (!isNaN(yellow) && val <= yellow) return 'yellow';
-      return 'green';
+      return val >= red ? 'red' : 'green';
     }
   }
 
@@ -833,17 +872,23 @@
     return metric.type === 'percentage' ? metric.value + '%' : metric.value;
   }
 
-  function thresholdHint(metric) {
-    if (metric.direction === 'higher-is-worse') {
-      return { redLabel: '≥ Red', yellowLabel: '≥ Yellow' };
-    } else {
-      return { redLabel: '≤ Red', yellowLabel: '≤ Yellow' };
-    }
+  function parseTableValue(value) {
+    const lines = (value || '').trim().split('\n').filter(l => l.trim());
+    if (lines.length === 0) return { headers: [], rows: [] };
+    const delim = lines[0].includes('\t') ? '\t' : ',';
+    const parseRow = line => line.split(delim).map(c => c.trim().replace(/^"|"$/g, ''));
+    return {
+      headers: parseRow(lines[0]),
+      rows: lines.slice(1).map(parseRow)
+    };
   }
 
   function renderMetricCard(m) {
-    const hints = thresholdHint(m);
     const isText = m.type === 'text';
+    const isTable = m.type === 'table';
+    const isNumeric = !isText && !isTable;
+    const redLabel = m.higherIsBetter ? '≤ Red' : '≥ Red';
+
     return `
       <div class="metric-card ${m.hidden ? 'hidden-metric' : ''}">
         <div class="metric-card-header">
@@ -851,6 +896,7 @@
             onchange="updateMetric(${m.id}, 'label', this.value)"
             placeholder="Metric name">
           <div class="metric-card-actions">
+            ${isNumeric ? `
             <div class="toggle-wrap na-toggle">
               <label class="toggle">
                 <input type="checkbox" ${m.na ? 'checked' : ''}
@@ -859,6 +905,7 @@
               </label>
               <span class="toggle-label">N/A</span>
             </div>
+            ` : ''}
             <div class="toggle-wrap">
               <label class="toggle">
                 <input type="checkbox" ${m.hidden ? 'checked' : ''}
@@ -870,59 +917,71 @@
             <button class="remove-btn" onclick="removeMetric(${m.id})" title="Remove">&#10005;</button>
           </div>
         </div>
-        <div class="metric-row">
-          <div class="metric-field value-field">
-            <label>Value</label>
-            <input type="${isText ? 'text' : 'number'}"
-              value="${escHtml(String(m.value))}"
-              oninput="updateMetric(${m.id}, 'value', this.value)"
-              placeholder="${isText ? 'Enter text...' : '0'}"
-              ${m.na ? 'disabled' : ''}>
-          </div>
-          <div class="metric-field type-field">
+
+        ${isTable ? `
+          <div class="metric-field type-field" style="margin-bottom: 10px;">
             <label>Type</label>
             <select onchange="updateMetric(${m.id}, 'type', this.value)">
-              <option value="number" ${m.type === 'number' ? 'selected' : ''}>Number</option>
-              <option value="percentage" ${m.type === 'percentage' ? 'selected' : ''}>Percentage</option>
-              <option value="text" ${m.type === 'text' ? 'selected' : ''}>Text</option>
+              <option value="number">Number</option>
+              <option value="percentage">Percentage</option>
+              <option value="text">Text</option>
+              <option value="table" selected>Table</option>
             </select>
           </div>
-          ${!isText ? `
-          <div class="metric-field direction-field">
-            <label>Direction</label>
-            <select onchange="updateMetric(${m.id}, 'direction', this.value)">
-              <option value="higher-is-worse" ${m.direction === 'higher-is-worse' ? 'selected' : ''}>Higher = Worse</option>
-              <option value="higher-is-better" ${m.direction === 'higher-is-better' ? 'selected' : ''}>Higher = Better</option>
-            </select>
+          <div class="metric-field">
+            <label>Table Data — paste from Excel (first row = headers)</label>
+            <textarea class="table-data-input"
+              oninput="updateMetric(${m.id}, 'value', this.value)"
+              placeholder="Finding Type&#9;Count&#10;Critical&#9;3&#10;High&#9;12">${escHtml(String(m.value))}</textarea>
+          </div>
+        ` : `
+          <div class="metric-row">
+            <div class="metric-field value-field">
+              <label>Value</label>
+              <input type="${isText ? 'text' : 'number'}"
+                value="${escHtml(String(m.value))}"
+                oninput="updateMetric(${m.id}, 'value', this.value)"
+                placeholder="${isText ? 'Enter text...' : '0'}"
+                ${m.na ? 'disabled' : ''}>
+            </div>
+            <div class="metric-field type-field">
+              <label>Type</label>
+              <select onchange="updateMetric(${m.id}, 'type', this.value)">
+                <option value="number" ${m.type === 'number' ? 'selected' : ''}>Number</option>
+                <option value="percentage" ${m.type === 'percentage' ? 'selected' : ''}>Percentage</option>
+                <option value="text" ${m.type === 'text' ? 'selected' : ''}>Text</option>
+                <option value="table">Table</option>
+              </select>
+            </div>
+            ${isNumeric ? `
+            <div class="metric-field">
+              <label>Direction</label>
+              <label class="check-label">
+                <input type="checkbox" ${m.higherIsBetter ? 'checked' : ''}
+                  onchange="updateMetric(${m.id}, 'higherIsBetter', this.checked)">
+                Higher is better
+              </label>
+            </div>
+            ` : ''}
+          </div>
+          ${isNumeric ? `
+          <div class="threshold-row">
+            <span class="swatch"></span>
+            <div class="metric-field threshold-field">
+              <label>${redLabel}</label>
+              <input type="number" value="${m.redThreshold}"
+                oninput="updateMetric(${m.id}, 'redThreshold', this.value)"
+                placeholder="—" ${m.na ? 'disabled' : ''}>
+            </div>
           </div>
           ` : ''}
-        </div>
-        ${!isText ? `
-        <div class="threshold-row">
-          <span class="swatch red"></span>
-          <div class="metric-field threshold-field">
-            <label>${hints.redLabel}</label>
-            <input type="number" value="${m.redThreshold}"
-              oninput="updateMetric(${m.id}, 'redThreshold', this.value)"
-              placeholder="—" ${m.na ? 'disabled' : ''}>
-          </div>
-          <span class="swatch yellow"></span>
-          <div class="metric-field threshold-field">
-            <label>${hints.yellowLabel}</label>
-            <input type="number" value="${m.yellowThreshold}"
-              oninput="updateMetric(${m.id}, 'yellowThreshold', this.value)"
-              placeholder="—" ${m.na ? 'disabled' : ''}>
-          </div>
-          <span class="threshold-label">else Green</span>
-        </div>
-        ` : ''}
+        `}
       </div>
     `;
   }
 
   function renderConfig() {
-    const container = document.getElementById('metricsList');
-    container.innerHTML = sections.map(section => {
+    document.getElementById('metricsList').innerHTML = sections.map(section => {
       const sectionMetrics = metrics.filter(m => m.sectionId === section.id);
       return `
         <div class="config-section-card">
@@ -937,7 +996,7 @@
             oninput="updateSection(${section.id}, 'commentary', this.value)"
             placeholder="Add commentary for this section...">${escHtml(section.commentary)}</textarea>
           <div class="section-metrics">
-            ${sectionMetrics.map(m => renderMetricCard(m)).join('')}
+            ${sectionMetrics.map(renderMetricCard).join('')}
           </div>
           <button class="add-metric-btn" onclick="addMetric({sectionId: ${section.id}})">+ Add Metric</button>
         </div>
@@ -949,19 +1008,36 @@
     const title = document.getElementById('reportTitle').value || 'Security Metrics Report';
     const period = document.getElementById('reportPeriod').value;
     const dateVal = document.getElementById('reportDate').value;
-    const dateStr = dateVal ? new Date(dateVal + 'T12:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+    const dateStr = dateVal
+      ? new Date(dateVal + 'T12:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      : '';
     const metaLine = [period, dateStr].filter(Boolean).join(' · ');
 
-    const hasContent = sections.some(s => {
-      return s.commentary || metrics.some(m => m.sectionId === s.id && !m.hidden);
-    });
+    const hasContent = sections.some(s =>
+      s.commentary || metrics.some(m => m.sectionId === s.id && !m.hidden)
+    );
 
     const sectionsHtml = sections.map(section => {
       const sectionMetrics = metrics.filter(m => m.sectionId === section.id && !m.hidden);
 
       const metricsHtml = sectionMetrics.map(m => {
-        const status = getStatus(m);
+        const isTable = m.type === 'table';
         const isText = m.type === 'text';
+
+        if (isTable) {
+          const { headers, rows } = parseTableValue(m.value);
+          return `
+            <div class="report-metric table-type">
+              <div class="report-metric-label">${escHtml(m.label)}</div>
+              <table class="report-metric-table">
+                <thead><tr>${headers.map(h => `<th>${escHtml(h)}</th>`).join('')}</tr></thead>
+                <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${escHtml(c)}</td>`).join('')}</tr>`).join('')}</tbody>
+              </table>
+            </div>
+          `;
+        }
+
+        const status = getStatus(m);
         return `
           <div class="report-metric status-${status} ${isText ? 'text-type' : ''}">
             <div class="report-metric-label">${escHtml(m.label)}</div>
@@ -987,24 +1063,15 @@
       <div class="report-body">
         ${hasContent
           ? sectionsHtml
-          : `<p style="color: var(--text-muted); text-align: center; padding: 40px 0;">Add sections and metrics in the config panel to get started.</p>`
+          : `<p style="color:var(--text-muted);text-align:center;padding:40px 0;">Add sections and metrics in the config panel to get started.</p>`
         }
       </div>
     `;
   }
 
-  function escHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  // JSON import/export
   function toggleJson() {
-    const body = document.getElementById('jsonBody');
-    const arrow = document.getElementById('jsonArrow');
-    body.classList.toggle('open');
-    arrow.classList.toggle('open');
+    document.getElementById('jsonBody').classList.toggle('open');
+    document.getElementById('jsonArrow').classList.toggle('open');
   }
 
   function exportJson() {
@@ -1013,25 +1080,23 @@
       period: document.getElementById('reportPeriod').value,
       date: document.getElementById('reportDate').value,
       sections: sections.map(s => ({
-        id: s.id,
         name: s.name,
-        commentary: s.commentary
-      })),
-      metrics: metrics.map(m => ({
-        sectionId: m.sectionId,
-        label: m.label,
-        value: m.value,
-        type: m.type,
-        direction: m.direction,
-        redThreshold: m.redThreshold,
-        yellowThreshold: m.yellowThreshold,
-        hidden: m.hidden,
-        na: m.na
+        commentary: s.commentary,
+        metrics: metrics
+          .filter(m => m.sectionId === s.id)
+          .map(m => ({
+            label: m.label,
+            value: m.value,
+            type: m.type,
+            higherIsBetter: m.higherIsBetter,
+            redThreshold: m.redThreshold,
+            hidden: m.hidden,
+            na: m.na
+          }))
       }))
     };
     document.getElementById('jsonArea').value = JSON.stringify(config, null, 2);
-    const body = document.getElementById('jsonBody');
-    if (!body.classList.contains('open')) toggleJson();
+    if (!document.getElementById('jsonBody').classList.contains('open')) toggleJson();
   }
 
   function importJson() {
@@ -1044,54 +1109,47 @@
       if (config.date) document.getElementById('reportDate').value = config.date;
 
       sections = [];
-      sectionCounter = 0;
       metrics = [];
       idCounter = 0;
+      sectionCounter = 0;
 
-      if (Array.isArray(config.sections)) {
-        sections = config.sections.map(s => ({
-          id: s.id !== undefined ? s.id : sectionCounter++,
-          name: s.name || 'Section',
-          commentary: s.commentary || ''
-        }));
-        sectionCounter = Math.max(sectionCounter, ...sections.map(s => s.id + 1));
-      }
+      (config.sections || []).forEach(s => {
+        const section = newSection(s);
+        sections.push(section);
+        (s.metrics || []).forEach(m => metrics.push(newMetric({ ...m, sectionId: section.id })));
+      });
 
-      if (Array.isArray(config.metrics)) {
-        config.metrics.forEach(m => metrics.push(newMetric(m)));
-      }
-
-      renderConfig();
-      render();
+      refresh();
     } catch (e) {
       alert('Invalid JSON: ' + e.message);
     }
   }
 
-  function printReport() {
-    window.print();
-  }
+  function printReport() { window.print(); }
 
-  // Init with example sections and metrics
   function init() {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('reportDate').value = today;
+    document.getElementById('versionBadge').textContent = 'v' + VERSION;
+    document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
 
-    const s1 = addSection({
+    const s1 = newSection({
       name: 'Vulnerability Management',
       commentary: 'Tracks open findings by severity and remediation performance against defined SLAs. Critical and High findings are actively triaged; MTTR and SLA compliance reflect the team\'s ability to close issues within committed timelines.'
     });
-    addMetric({ sectionId: s1.id, label: 'Open Critical Findings', value: 3, type: 'number', direction: 'higher-is-worse', redThreshold: 1, yellowThreshold: 1 });
-    addMetric({ sectionId: s1.id, label: 'Open High Findings', value: 12, type: 'number', direction: 'higher-is-worse', redThreshold: 20, yellowThreshold: 10 });
-    addMetric({ sectionId: s1.id, label: 'MTTR (days)', value: 18, type: 'number', direction: 'higher-is-worse', redThreshold: 30, yellowThreshold: 14 });
-    addMetric({ sectionId: s1.id, label: 'SLA Compliance', value: 87, type: 'percentage', direction: 'higher-is-better', redThreshold: 70, yellowThreshold: 85 });
+    sections.push(s1);
+    metrics.push(newMetric({ sectionId: s1.id, label: 'Open Critical Findings', value: 3, type: 'number', higherIsBetter: false, redThreshold: 1 }));
+    metrics.push(newMetric({ sectionId: s1.id, label: 'Open High Findings', value: 12, type: 'number', higherIsBetter: false, redThreshold: 20 }));
+    metrics.push(newMetric({ sectionId: s1.id, label: 'MTTR (days)', value: 18, type: 'number', higherIsBetter: false, redThreshold: 30 }));
+    metrics.push(newMetric({ sectionId: s1.id, label: 'SLA Compliance', value: 87, type: 'percentage', higherIsBetter: true, redThreshold: 70 }));
 
-    const s2 = addSection({
+    const s2 = newSection({
       name: 'Program Health',
       commentary: 'Measures the breadth and maturity of the security program, including tooling coverage and ongoing initiatives. Scanner coverage reflects the percentage of in-scope repositories with active security scanning enabled.'
     });
-    addMetric({ sectionId: s2.id, label: 'Scanner Coverage', value: 94, type: 'percentage', direction: 'higher-is-better', redThreshold: 75, yellowThreshold: 90 });
-    addMetric({ sectionId: s2.id, label: 'Notes', value: 'Champion training scheduled for April. New SAST tool onboarding in progress.', type: 'text' });
+    sections.push(s2);
+    metrics.push(newMetric({ sectionId: s2.id, label: 'Scanner Coverage', value: 94, type: 'percentage', higherIsBetter: true, redThreshold: 75 }));
+    metrics.push(newMetric({ sectionId: s2.id, label: 'Notes', value: 'Champion training scheduled for April. New SAST tool onboarding in progress.', type: 'text' }));
+
+    refresh();
   }
 
   init();
