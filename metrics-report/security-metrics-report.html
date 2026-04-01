@@ -786,6 +786,114 @@
     opacity: 0.4;
     cursor: not-allowed;
   }
+
+  /* Bucket Grid */
+  .bucket-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 32px;
+    align-content: start;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .bucket {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    background: var(--panel-bg);
+    transition: border-color 0.15s, background 0.15s;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .bucket-header {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .bucket-applied-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--green);
+  }
+
+  .bucket.is-applied {
+    border-color: var(--green);
+    border-style: solid;
+  }
+
+  .bucket-empty-label {
+    color: var(--text-muted);
+    font-size: 13px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bucket.drag-over {
+    border-color: var(--accent);
+    border-style: solid;
+    background: rgba(37, 99, 235, 0.04);
+  }
+
+  .bucket-file-row {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .bucket-metrics-list {
+    list-style: none;
+    font-size: 13px;
+    flex: 1;
+    margin-bottom: 12px;
+  }
+
+  .bucket-metrics-list li {
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .bucket-metrics-list li:last-child { border-bottom: none; }
+
+  .bucket-metric-label {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .bucket-metric-value {
+    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .bucket-metric-value.is-na {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-style: italic;
+  }
+
+  .bucket-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 12px;
+  }
 </style>
 </head>
 <body>
@@ -970,6 +1078,66 @@
       console.warn('[SMR] Failed to load bucket state from localStorage; resetting.', e);
       bucketState = {};
     }
+  }
+
+  function updateZipButton() {
+    const hasFiles = Object.keys(bucketState).length > 0;
+    document.getElementById('btnZip').disabled = !hasFiles;
+  }
+
+  function renderImportTab() {
+    const grid = document.getElementById('bucketGrid');
+    if (!grid) return;
+    grid.innerHTML = TOOL_BUCKETS.map(bucket => {
+      const state = bucketState[bucket.id];
+      const isLoaded  = !!state;
+      const isApplied = isLoaded && state.applied;
+
+      const headerHtml = `
+        <div class="bucket-header">
+          <span>${escHtml(bucket.label)}</span>
+          ${isApplied ? '<span class="bucket-applied-badge">&#10003; Applied</span>' : ''}
+        </div>`;
+
+      const dragAttrs = `
+        ondragover="bucketDragOver(event,'${bucket.id}')"
+        ondragleave="bucketDragLeave(event,'${bucket.id}')"
+        ondrop="bucketDrop(event,'${bucket.id}')"`;
+
+      if (!isLoaded) {
+        return `
+          <div class="bucket" id="bucket-${bucket.id}" ${dragAttrs}>
+            ${headerHtml}
+            <div class="bucket-empty-label">Drop CSV here</div>
+          </div>`;
+      }
+
+      const metricsHtml = Object.entries(bucket.extractors).map(([label, _fn]) => {
+        const val  = state.extracted[label];
+        const isNa = val === null || val === undefined;
+        return `
+          <li>
+            <span class="bucket-metric-label">${escHtml(label)}</span>
+            <span class="bucket-metric-value ${isNa ? 'is-na' : ''}">
+              ${isNa ? 'N/A (not implemented)' : escHtml(String(val))}
+            </span>
+          </li>`;
+      }).join('');
+
+      return `
+        <div class="bucket ${isApplied ? 'is-applied' : ''}" id="bucket-${bucket.id}" ${dragAttrs}>
+          ${headerHtml}
+          <div class="bucket-file-row">
+            <span>&#128196; ${escHtml(state.fileName)}</span>
+            <button class="remove-btn" onclick="clearBucket('${bucket.id}')" title="Clear">&#10005;</button>
+          </div>
+          <ul class="bucket-metrics-list">${metricsHtml}</ul>
+          <div class="bucket-actions">
+            <button class="btn btn-sm btn-primary" onclick="applyBucket('${bucket.id}')">Apply to Report</button>
+          </div>
+        </div>`;
+    }).join('');
+    updateZipButton();
   }
 
   const VERSION = '0.2.0';
