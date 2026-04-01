@@ -872,33 +872,33 @@
       id: 'bitsight',
       label: 'BitSight Findings',
       extractors: {
-        'Overall BitSight Score': (rows, headers) => null, // stub
-        'Open Critical Findings': (rows, headers) => null, // stub
+        'Overall BitSight Score': (_rows, _headers) => null, // stub
+        'Open Critical Findings': (_rows, _headers) => null, // stub
       }
     },
     {
       id: 'qualys',
       label: 'Qualys Findings',
       extractors: {
-        'Open Critical Findings': (rows, headers) => null, // stub
-        'Open High Findings':     (rows, headers) => null, // stub
-        'SLA Compliance':         (rows, headers) => null, // stub
+        'Open Critical Findings': (_rows, _headers) => null, // stub
+        'Open High Findings':     (_rows, _headers) => null, // stub
+        'SLA Compliance':         (_rows, _headers) => null, // stub
       }
     },
     {
       id: 'armorcode',
       label: 'ArmorCode',
       extractors: {
-        'Open Critical Findings': (rows, headers) => null, // stub
-        'Open High Findings':     (rows, headers) => null, // stub
+        'Open Critical Findings': (_rows, _headers) => null, // stub
+        'Open High Findings':     (_rows, _headers) => null, // stub
       }
     },
     {
       id: 'sdelements',
       label: 'SDElements',
       extractors: {
-        'Task Completion Rate': (rows, headers) => null, // stub
-        'Overdue Tasks':        (rows, headers) => null, // stub
+        'Task Completion Rate': (_rows, _headers) => null, // stub
+        'Overdue Tasks':        (_rows, _headers) => null, // stub
       }
     }
   ];
@@ -927,6 +927,9 @@
       return field;
     }
 
+    // Note: the inner loop's `text[i] !== '\n'` guard is checked before calling parseField.
+    // parseField's quoted-field branch does not check for '\n', so it correctly
+    // reads through embedded newlines in quoted fields (RFC 4180 §2 rule 6).
     while (i < text.length) {
       const fields = [];
       while (i < text.length && text[i] !== '\n') {
@@ -934,7 +937,7 @@
         if (text[i] === ',') i++;
       }
       if (text[i] === '\n') i++;
-      if (fields.length > 1 || fields[0] !== '') rows.push(fields);
+      if (fields.length > 0 && (fields.length > 1 || fields[0] !== '')) rows.push(fields);
     }
 
     if (rows.length === 0) return { headers: [], rows: [] };
