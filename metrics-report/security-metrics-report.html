@@ -864,6 +864,89 @@
 </div>
 
 <script>
+  // ─── Tool Bucket Configuration ───────────────────────────────────────────
+  // Add tools here. Each extractor receives (rows, headers) and returns a
+  // raw value (number or string) or null for N/A / not implemented.
+  const TOOL_BUCKETS = [
+    {
+      id: 'bitsight',
+      label: 'BitSight Findings',
+      extractors: {
+        'Overall BitSight Score': (rows, headers) => null, // stub
+        'Open Critical Findings': (rows, headers) => null, // stub
+      }
+    },
+    {
+      id: 'qualys',
+      label: 'Qualys Findings',
+      extractors: {
+        'Open Critical Findings': (rows, headers) => null, // stub
+        'Open High Findings':     (rows, headers) => null, // stub
+        'SLA Compliance':         (rows, headers) => null, // stub
+      }
+    },
+    {
+      id: 'armorcode',
+      label: 'ArmorCode',
+      extractors: {
+        'Open Critical Findings': (rows, headers) => null, // stub
+        'Open High Findings':     (rows, headers) => null, // stub
+      }
+    },
+    {
+      id: 'sdelements',
+      label: 'SDElements',
+      extractors: {
+        'Task Completion Rate': (rows, headers) => null, // stub
+        'Overdue Tasks':        (rows, headers) => null, // stub
+      }
+    }
+  ];
+
+  // ─── CSV Parser (RFC 4180) ────────────────────────────────────────────────
+  function parseCSV(text) {
+    text = text.replace(/^\uFEFF/, '');                      // strip BOM
+    text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n'); // normalize CRLF
+
+    const rows = [];
+    let i = 0;
+
+    function parseField() {
+      if (text[i] === '"') {
+        i++;
+        let field = '';
+        while (i < text.length) {
+          if (text[i] === '"' && text[i + 1] === '"') { field += '"'; i += 2; }
+          else if (text[i] === '"') { i++; break; }
+          else field += text[i++];
+        }
+        return field;
+      }
+      let field = '';
+      while (i < text.length && text[i] !== ',' && text[i] !== '\n') field += text[i++];
+      return field;
+    }
+
+    while (i < text.length) {
+      const fields = [];
+      while (i < text.length && text[i] !== '\n') {
+        fields.push(parseField());
+        if (text[i] === ',') i++;
+      }
+      if (text[i] === '\n') i++;
+      if (fields.length > 1 || fields[0] !== '') rows.push(fields);
+    }
+
+    if (rows.length === 0) return { headers: [], rows: [] };
+    const headers = rows[0];
+    const dataRows = rows.slice(1).map(r => {
+      const obj = {};
+      headers.forEach((h, idx) => { obj[h] = r[idx] ?? ''; });
+      return obj;
+    });
+    return { headers, rows: dataRows };
+  }
+
   const VERSION = '0.2.0';
 
   let sections = [];
