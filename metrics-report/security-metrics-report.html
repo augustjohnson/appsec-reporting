@@ -955,7 +955,11 @@
   let bucketState = {};
 
   function saveBucketState() {
-    localStorage.setItem('smr_buckets_v1', JSON.stringify(bucketState));
+    try {
+      localStorage.setItem('smr_buckets_v1', JSON.stringify(bucketState));
+    } catch (e) {
+      console.error('[SMR] Failed to persist bucket state.', e);
+    }
   }
 
   function loadBucketState() {
@@ -963,6 +967,7 @@
       const saved = localStorage.getItem('smr_buckets_v1');
       if (saved) bucketState = JSON.parse(saved);
     } catch (e) {
+      console.warn('[SMR] Failed to load bucket state from localStorage; resetting.', e);
       bucketState = {};
     }
   }
