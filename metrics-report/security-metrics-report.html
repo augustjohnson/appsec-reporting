@@ -950,6 +950,23 @@
     return { headers, rows: dataRows };
   }
 
+  // ─── Bucket State ─────────────────────────────────────────────────────────
+  // Shape: { [bucketId]: { fileName, csvText, extracted, applied } }
+  let bucketState = {};
+
+  function saveBucketState() {
+    localStorage.setItem('smr_buckets_v1', JSON.stringify(bucketState));
+  }
+
+  function loadBucketState() {
+    try {
+      const saved = localStorage.getItem('smr_buckets_v1');
+      if (saved) bucketState = JSON.parse(saved);
+    } catch (e) {
+      bucketState = {};
+    }
+  }
+
   const VERSION = '0.2.0';
 
   let sections = [];
