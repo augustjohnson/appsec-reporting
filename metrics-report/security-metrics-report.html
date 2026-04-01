@@ -1141,6 +1141,46 @@
     updateZipButton();
   }
 
+  // ─── Drag-and-Drop ────────────────────────────────────────────────────────
+  function bucketDragOver(e, bucketId) {
+    e.preventDefault();
+    document.getElementById('bucket-' + bucketId).classList.add('drag-over');
+  }
+
+  function bucketDragLeave(e, bucketId) {
+    document.getElementById('bucket-' + bucketId).classList.remove('drag-over');
+  }
+
+  function bucketDrop(e, bucketId) {
+    e.preventDefault();
+    document.getElementById('bucket-' + bucketId).classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => handleDrop(bucketId, file.name, ev.target.result);
+    reader.readAsText(file);
+  }
+
+  function handleDrop(bucketId, fileName, csvText) {
+    const bucket = TOOL_BUCKETS.find(b => b.id === bucketId);
+    if (!bucket) return;
+    const { rows, headers } = parseCSV(csvText);
+    const extracted = {};
+    Object.entries(bucket.extractors).forEach(([label, fn]) => {
+      try { extracted[label] = fn(rows, headers); }
+      catch (_e) { extracted[label] = null; }
+    });
+    bucketState[bucketId] = { fileName, csvText, extracted, applied: false };
+    saveBucketState();
+    renderImportTab();
+  }
+
+  function clearBucket(bucketId) {
+    delete bucketState[bucketId];
+    saveBucketState();
+    renderImportTab();
+  }
+
   const VERSION = '0.2.0';
 
   let sections = [];
