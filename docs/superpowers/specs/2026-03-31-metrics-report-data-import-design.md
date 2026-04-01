@@ -43,7 +43,7 @@ The import tab renders a grid of named drop zones, one per configured tool. Init
 
 ### Persistence
 
-Bucket contents (file name, raw CSV text, extracted values) are stored in `localStorage`. A page refresh restores all loaded buckets. **Reset** clears `localStorage` and resets all buckets to empty state.
+Bucket contents are stored in `localStorage` under the key `smr_buckets_v1` as a JSON object keyed by bucket `id`. Each entry stores: `{ fileName, csvText, extracted, applied }` where `applied` is a boolean indicating whether the bucket's values have been pushed to the report. On page refresh, all loaded buckets are restored — buckets with `applied: true` show the applied indicator. **Reset** clears only the `smr_buckets_v1` key; the report state (sections, metrics, title, etc.) is not affected.
 
 ---
 
@@ -67,8 +67,8 @@ Each extractor is a plain function receiving:
 - `headers` — array of column name strings
 
 Return values:
-- A number, percentage value, or string → used as the metric value
-- `null` → metric is marked N/A
+- A number or string → used as the metric's `value` field. The extractor must return the raw numeric value (e.g. `87`, not `"87%"`); `metric.type` is never changed by Apply to Report — the existing type set in the report config is preserved.
+- `null` → metric is marked N/A (`metric.na = true`)
 
 **Stubs return `null`** and display as `"N/A (not implemented)"` in the bucket. This makes missing implementations visible without breaking the tool.
 
@@ -90,6 +90,7 @@ Return values:
 
 ### Get Zip
 
+- Works from either tab — no tab switch required
 - Bundles all currently loaded CSV files into a zip
 - Uses an inlined, minified copy of **JSZip** (~100KB) embedded directly in the HTML to preserve the self-contained, zero-dependency model
 - Files named as originally dropped (e.g. `bitsight_export.csv`)
@@ -107,14 +108,29 @@ Return values:
 When **Apply to Report** is clicked on a loaded bucket:
 
 1. Walk every metric in the current report state (all sections)
-2. For each metric, check if the bucket's `extractors` map contains a key matching the metric's `label`
+2. For each metric, check if the bucket's `extractors` map contains a key matching the metric's `label`. **Matching is exact case-sensitive string equality after trimming leading/trailing whitespace from both sides.**
 3. **Match + non-null value:** set `metric.value` to the extracted value, set `metric.na = false`
 4. **Match + null value (stub):** set `metric.na = true`
 5. **No match:** leave metric unchanged
-6. Show a toast notification: e.g. `"Applied 3 values, 2 N/A, 4 unchanged"`
-7. Switch to the Report tab so the user can review
+6. Mark the bucket as `applied: true` in `localStorage`
+7. Show a toast notification: e.g. `"Applied 3 values, 2 N/A, 4 unchanged"`
+8. Switch to the Report tab so the user can review
 
-Re-applying a bucket (e.g. after dropping a new file) overwrites previously applied values. Metrics not covered by the bucket remain unchanged.
+Dropping a new CSV into a bucket that is already in the Applied state resets `applied` to `false` (both in memory and in `localStorage`) immediately — before the user clicks Apply again. The applied indicator clears as soon as the new file lands.
+
+Re-applying a bucket (e.g. after dropping a new CSV into it) overwrites previously applied values using the same rules — if the new file's extractor is still a stub, `metric.na` remains `true`. Metrics not covered by the bucket remain unchanged.
+
+If the report contains multiple metrics with the same label in different sections, Apply updates **all** of them. The toast notification counts by unique extractor key, not by number of metrics updated (e.g. if "Open Critical Findings" appears in two sections, it counts as 1 applied, not 2).
+
+---
+
+## CSV Parsing
+
+Use a minimal RFC 4180-compliant parser built inline (no library). Requirements:
+- Trim UTF-8 BOM (`\uFEFF`) from the start of the file before parsing — common in Excel exports
+- Handle CRLF and LF line endings
+- Handle quoted fields containing commas and embedded newlines
+- First row is always treated as headers; subsequent rows become objects keyed by header name
 
 ---
 
