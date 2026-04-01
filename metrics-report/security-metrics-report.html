@@ -1281,7 +1281,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     URL.revokeObjectURL(url);
   }
 
-  const VERSION = '0.2.0';
+  const VERSION = '0.3.0';
 
   let sections = [];
   let metrics = [];
@@ -1651,6 +1651,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   }
 
   function init() {
+    loadBucketState();          // restore buckets from localStorage
+    renderImportTab();          // render import tab (uses restored state)
     document.getElementById('versionBadge').textContent = 'v' + VERSION;
     document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
 
