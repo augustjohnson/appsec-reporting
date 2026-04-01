@@ -32,13 +32,18 @@
     color: var(--text);
     line-height: 1.5;
     font-size: 15px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
   }
 
   /* Layout */
   .app {
     display: flex;
-    height: 100vh;
+    flex: 1;
     overflow: hidden;
+    min-height: 0;
   }
 
   .config-panel {
@@ -677,26 +682,24 @@
 
   /* Print */
   @media print {
-    body { background: white; }
-
+    body { background: white; display: block; height: auto; overflow: visible; }
+    .topbar { display: none !important; }
+    .tab-content { display: block !important; overflow: visible; }
+    #tab-import { display: none !important; }
+    #tab-report { display: block !important; }
     .config-panel { display: none !important; }
-
     .app { display: block; height: auto; }
-
     .preview-panel {
       padding: 0;
       overflow: visible;
     }
-
     .report {
       box-shadow: none;
       border-radius: 0;
       max-width: 100%;
     }
-
     .report-header { padding: 20px 30px 16px; }
     .report-body { padding: 20px 30px 30px; }
-
     .report-metric { break-inside: avoid; }
     .report-section { break-inside: avoid; }
   }
@@ -712,59 +715,151 @@
     background: #ccc;
     border-radius: 3px;
   }
+
+  /* Top bar */
+  .topbar {
+    height: 52px;
+    background: var(--panel-bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    flex-shrink: 0;
+    gap: 16px;
+    z-index: 10;
+  }
+
+  .topbar-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    color: var(--text);
+  }
+
+  .tab-switcher {
+    display: flex;
+    gap: 2px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 3px;
+  }
+
+  .tab-btn {
+    padding: 5px 16px;
+    border: none;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+
+  .tab-btn.tab-active {
+    background: var(--panel-bg);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  .topbar-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .tab-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 </style>
 </head>
 <body>
 
-<div class="app">
-  <!-- Config Panel -->
-  <div class="config-panel">
-    <div class="config-header">
-      <h2>Metrics Config</h2>
-      <span id="versionBadge" style="font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:0.03em;"></span>
-      <button class="btn btn-sm btn-primary" onclick="printReport()">Print / PDF</button>
-    </div>
-    <div class="config-body">
-      <!-- JSON Import/Export -->
-      <div class="json-section">
-        <button class="json-toggle" onclick="toggleJson()">
-          <span class="arrow" id="jsonArrow">&#9654;</span>
-          JSON Import / Export
-        </button>
-        <div class="json-body" id="jsonBody">
-          <textarea id="jsonArea" placeholder='Paste JSON config here to load, or click "Export" to generate...'></textarea>
-          <div class="json-actions">
-            <button class="btn btn-sm btn-primary" onclick="importJson()">Import</button>
-            <button class="btn btn-sm" onclick="exportJson()">Export</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Report Title -->
-      <div class="report-title-config">
-        <label>Report Title</label>
-        <input type="text" id="reportTitle" value="Product Security Metrics Report" oninput="render()">
-        <div class="report-date-row">
-          <div>
-            <label>Reporting Period</label>
-            <input type="text" id="reportPeriod" placeholder="e.g. Q1 2026" oninput="render()">
-          </div>
-          <div>
-            <label>Date</label>
-            <input type="date" id="reportDate" oninput="render()">
-          </div>
-        </div>
-      </div>
-
-      <!-- Sections -->
-      <div id="metricsList"></div>
-      <button class="add-section-btn" onclick="addSection()">+ Add Section</button>
-    </div>
+<!-- Top Bar -->
+<div class="topbar">
+  <span class="topbar-title">Security Metrics Report</span>
+  <div class="tab-switcher">
+    <button class="tab-btn tab-active" data-tab="import" onclick="switchTab('import')">Data Import</button>
+    <button class="tab-btn" data-tab="report" onclick="switchTab('report')">Report</button>
   </div>
+  <div class="topbar-actions">
+    <button class="btn btn-sm" onclick="printReport()">Print / PDF</button>
+    <button class="btn btn-sm" onclick="resetAll()">Reset</button>
+    <button class="btn btn-sm" id="btnZip" disabled onclick="getZip()">Get Zip</button>
+  </div>
+</div>
 
-  <!-- Preview Panel -->
-  <div class="preview-panel">
-    <div class="report" id="reportPreview"></div>
+<!-- Import Tab -->
+<div id="tab-import" class="tab-content">
+  <div id="bucketGrid" class="bucket-grid"></div>
+</div>
+
+<!-- Report Tab (hidden by default) -->
+<div id="tab-report" class="tab-content" style="display:none">
+  <div class="app">
+    <!-- Config Panel -->
+    <div class="config-panel">
+      <div class="config-header">
+        <h2>Metrics Config</h2>
+        <span id="versionBadge" style="font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:0.03em;"></span>
+      </div>
+      <div class="config-body">
+        <!-- JSON Import/Export -->
+        <div class="json-section">
+          <button class="json-toggle" onclick="toggleJson()">
+            <span class="arrow" id="jsonArrow">&#9654;</span>
+            JSON Import / Export
+          </button>
+          <div class="json-body" id="jsonBody">
+            <textarea id="jsonArea" placeholder='Paste JSON config here to load, or click "Export" to generate...'></textarea>
+            <div class="json-actions">
+              <button class="btn btn-sm btn-primary" onclick="importJson()">Import</button>
+              <button class="btn btn-sm" onclick="exportJson()">Export</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Report Title -->
+        <div class="report-title-config">
+          <label>Report Title</label>
+          <input type="text" id="reportTitle" value="Product Security Metrics Report" oninput="render()">
+          <div class="report-date-row">
+            <div>
+              <label>Reporting Period</label>
+              <input type="text" id="reportPeriod" placeholder="e.g. Q1 2026" oninput="render()">
+            </div>
+            <div>
+              <label>Date</label>
+              <input type="date" id="reportDate" oninput="render()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Sections -->
+        <div id="metricsList"></div>
+        <button class="add-section-btn" onclick="addSection()">+ Add Section</button>
+      </div>
+    </div>
+
+    <!-- Preview Panel -->
+    <div class="preview-panel">
+      <div class="report" id="reportPreview"></div>
+    </div>
   </div>
 </div>
 
@@ -1125,7 +1220,18 @@
     }
   }
 
-  function printReport() { window.print(); }
+  function switchTab(name) {
+    document.getElementById('tab-import').style.display = name === 'import' ? 'flex' : 'none';
+    document.getElementById('tab-report').style.display  = name === 'report'  ? 'flex' : 'none';
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.toggle('tab-active', b.dataset.tab === name);
+    });
+  }
+
+  function printReport() {
+    switchTab('report');
+    setTimeout(() => window.print(), 100);
+  }
 
   function init() {
     document.getElementById('versionBadge').textContent = 'v' + VERSION;
