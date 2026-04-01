@@ -1191,8 +1191,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     document.getElementById('bucket-' + bucketId).classList.remove('drag-over');
     const file = e.dataTransfer.files[0];
     if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.csv') && file.type !== 'text/csv') {
+      showToast('Please drop a CSV file.');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = ev => handleDrop(bucketId, file.name, ev.target.result);
+    reader.onerror = () => { console.error('[SMR] FileReader error'); showToast('Failed to read file.'); };
     reader.readAsText(file);
   }
 
@@ -1255,7 +1260,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     saveBucketState();
     renderImportTab();
     refresh();
-    showToast(`Applied ${applied} value${applied !== 1 ? 's' : ''}, ${na} N/A, ${unchanged} unchanged`);
+    showToast(`Applied ${applied} value${applied !== 1 ? 's' : ''}, ${na} N/A, ${unchanged} unmatched`);
     switchTab('report');
   }
 
@@ -1263,22 +1268,29 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   function resetAll() {
     if (!confirm('Clear all loaded CSV files? Your report config will not be affected.')) return;
     bucketState = {};
-    localStorage.removeItem('smr_buckets_v1');
+    saveBucketState();
     renderImportTab();
   }
 
   async function getZip() {
     const entries = Object.values(bucketState);
     if (entries.length === 0) return;
-    const zip = new JSZip();
-    entries.forEach(state => zip.file(state.fileName, state.csvText));
-    const blob = await zip.generateAsync({ type: 'blob' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = 'security-metrics-csvs.zip';
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const zip = new JSZip();
+      entries.forEach(state => zip.file(state.fileName, state.csvText));
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'security-metrics-csvs.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('[SMR] Zip generation failed.', e);
+      showToast('Failed to generate zip.');
+    }
   }
 
   const VERSION = '0.3.0';
